@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import copy
 import datetime
+import re
 
 from blist import sortedlist
 from elasticsearch.client import Elasticsearch
@@ -107,6 +108,18 @@ class BlacklistRule(CompareRule):
         term = lookup_es_key(event, self.rules['compare_key'])
         if term in self.rules['blacklist']:
             return True
+        return False
+
+
+class BlacklistRegexRule(CompareRule):
+    """ A CompareRule where the compare function checks a given key against a blacklist """
+    required_options = frozenset(['compare_key', 'blacklist'])
+
+    def compare(self, event):
+        term = lookup_es_key(event, self.rules['compare_key'])
+        for blackterm in self.rules['blacklist']:
+            if term and re.search(blackterm, term):
+                return True
         return False
 
 

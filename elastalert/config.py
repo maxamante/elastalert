@@ -36,6 +36,7 @@ rules_mapping = {
     'any': ruletypes.AnyRule,
     'spike': ruletypes.SpikeRule,
     'blacklist': ruletypes.BlacklistRule,
+    'blacklist_regex': ruletypes.BlacklistRegexRule,
     'whitelist': ruletypes.WhitelistRule,
     'change': ruletypes.ChangeRule,
     'flatline': ruletypes.FlatlineRule,
@@ -143,7 +144,7 @@ def load_options(rule, conf, args=None):
     rule.setdefault('timestamp_format', '%Y-%m-%dT%H:%M:%SZ')
     rule.setdefault('_source_enabled', True)
     rule.setdefault('use_local_time', True)
-    rule.setdefault('es_port', conf.get('es_port'))
+    rule.setdefault('es_port', None)
     rule.setdefault('es_host', conf.get('es_host'))
     rule.setdefault('es_username', conf.get('es_username'))
     rule.setdefault('es_password', conf.get('es_password'))
