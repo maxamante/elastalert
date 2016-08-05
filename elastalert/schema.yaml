@@ -41,6 +41,13 @@ oneOf:
       compare_key: {type: string}
       blacklist: {type: array, items: {type: string}}
 
+  - title: BlacklistRegex
+    required: [blacklist, compare_key]
+    properties:
+      type: {enum: [blacklist_regex]}
+      compare_key: {type: string}
+      blacklist: {type: array, items: {type: string}}
+
   - title: Whitelist
     required: [whitelist, compare_key, ignore_null]
     properties:
