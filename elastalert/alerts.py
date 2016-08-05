@@ -856,7 +856,7 @@ class PagerDutyAlerter(Alerter):
             'incident_key': self.pagerduty_incident_key,
             'client': self.pagerduty_client_name,
             'details': {
-                "information": body.encode('UTF-8'),
+                "information": MIMEText(body.encode('UTF-8'), _charset='UTF-8').as_string(),
             },
         }
 
