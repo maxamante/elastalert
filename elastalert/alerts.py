@@ -311,15 +311,19 @@ class EmailAlerter(Alerter):
                 '</body>',
                 '</html>'
             ]
-            body = '\n'.join(new_body)
+            html_body = '\n'.join(new_body)
+            email_msg = MIMEMultipart('alternative')
+            email_msg.attach(MIMEText(body, _subtype='plain', _charset='UTF-8'))
+            email_msg.attach(MIMEText(html_body, _subtype='html', _charset='UTF-8'))
 
-        # Add JIRA ticket if it exists
-        if self.pipeline is not None and 'jira_ticket' in self.pipeline:
-            url = '%s/browse/%s' % (self.pipeline['jira_server'], self.pipeline['jira_ticket'])
-            body += '\nJIRA ticket: %s' % (url)
+        else:
+            # Add JIRA ticket if it exists
+            if self.pipeline is not None and 'jira_ticket' in self.pipeline:
+                url = '%s/browse/%s' % (self.pipeline['jira_server'], self.pipeline['jira_ticket'])
+                body += '\nJIRA ticket: %s' % (url)
+            email_msg = MIMEText(body.encode('UTF-8'), _charset='UTF-8')
 
         to_addr = self.rule['email']
-        email_msg = MIMEText(body, _subtype='html', _charset='UTF-8')
         email_msg['Subject'] = self.create_title(matches)
         email_msg['To'] = ', '.join(self.rule['email'])
         email_msg['From'] = self.from_addr
