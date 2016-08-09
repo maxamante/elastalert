@@ -319,7 +319,7 @@ class EmailAlerter(Alerter):
             body += '\nJIRA ticket: %s' % (url)
 
         to_addr = self.rule['email']
-        email_msg = MIMEText(body.encode('UTF-8'), _subtype='html')
+        email_msg = MIMEText(body, _subtype='html', _charset='UTF-8')
         email_msg['Subject'] = self.create_title(matches)
         email_msg['To'] = ', '.join(self.rule['email'])
         email_msg['From'] = self.from_addr
