@@ -134,8 +134,11 @@ class ElastAlerter():
                                          aws_region=es_conn_conf['aws_region'],
                                          boto_profile=es_conn_conf['boto_profile'])
 
-        return Elasticsearch(host=es_conn_conf['es_host'],
-                             port=es_conn_conf['es_port'],
+        host = (es_conn_conf['es_host'] + ':' + str(es_conn_conf['es_port'])
+                if es_conn_conf['es_port']
+                else es_conn_conf['es_host'])
+
+        return Elasticsearch(host=host,
                              url_prefix=es_conn_conf['es_url_prefix'],
                              use_ssl=es_conn_conf['use_ssl'],
                              connection_class=RequestsHttpConnection,
