@@ -311,7 +311,7 @@ class EmailAlerter(Alerter):
                 '</body>',
                 '</html>'
             ]
-            # body = '\n'.join(new_body)
+            body = '\n'.join(new_body)
 
         # Add JIRA ticket if it exists
         if self.pipeline is not None and 'jira_ticket' in self.pipeline:
