@@ -138,8 +138,10 @@ class ElastAlerter():
                 if es_conn_conf['es_port']
                 else es_conn_conf['es_host'])
 
+        if es_conn_conf['es_url_prefix']:
+            host = ''.join([host, '/', es_conn_conf['es_url_prefix']])
+
         return Elasticsearch(host=host,
-                             url_prefix=es_conn_conf['es_url_prefix'],
                              use_ssl=es_conn_conf['use_ssl'],
                              connection_class=RequestsHttpConnection,
                              http_auth=es_conn_conf['http_auth'],
