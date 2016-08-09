@@ -304,8 +304,8 @@ class EmailAlerter(Alerter):
             for patt in self.rule['blacklist']:
                 body = re.sub(patt, highlight, body)
             new_body = [
-                'Content-Type: text/html; charset="us-ascii"',
                 '<html>',
+                '<head></head>',
                 '<body>',
                 body,
                 '</body>',
@@ -319,7 +319,7 @@ class EmailAlerter(Alerter):
             body += '\nJIRA ticket: %s' % (url)
 
         to_addr = self.rule['email']
-        email_msg = MIMEText(body.encode('UTF-8'), _subtype='html', _charset='UTF-8')
+        email_msg = MIMEText(body, 'html')
         email_msg['Subject'] = self.create_title(matches)
         email_msg['To'] = ', '.join(self.rule['email'])
         email_msg['From'] = self.from_addr
