@@ -294,7 +294,14 @@ class EmailAlerter(Alerter):
             self.rule['bcc'] = [self.rule['bcc']]
 
     def alert(self, matches):
+        def highlight(matchobj):
+            return '<b>' + matchobj.group(0) + '</b>'
+
         body = self.create_alert_body(matches)
+
+        if 'blacklist' in self.rule:
+            for patt in self.rule['blacklist']:
+                body = re.sub(patt, highlight, body)
 
         # Add JIRA ticket if it exists
         if self.pipeline is not None and 'jira_ticket' in self.pipeline:
