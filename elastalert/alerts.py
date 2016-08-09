@@ -314,8 +314,8 @@ class EmailAlerter(Alerter):
             ]
             html_body = '\n'.join(new_body)
             email_msg = MIMEMultipart('alternative')
-            email_msg.attach(MIMEText(body.encode('ascii'), _subtype='plain', _charset='ascii'))
-            email_msg.attach(MIMEText(html_body.encode('ascii'), _subtype='html', _charset='ascii'))
+            email_msg.attach(MIMEText(body, _subtype='plain', _charset='iso-8859-1'))
+            email_msg.attach(MIMEText(html_body, _subtype='html', _charset='iso-8859-1'))
 
         else:
             # Add JIRA ticket if it exists
