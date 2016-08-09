@@ -138,6 +138,7 @@ class ElastAlerter():
                 if es_conn_conf['es_port']
                 else es_conn_conf['es_host'])
         print host
+        print es_conn_conf
 
         es = Elasticsearch(host=host,
                            use_ssl=es_conn_conf['use_ssl'],
