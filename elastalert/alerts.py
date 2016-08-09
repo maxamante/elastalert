@@ -40,6 +40,8 @@ class BasicMatchString(object):
     def __init__(self, rule, match):
         self.rule = rule
         self.match = match
+        print self.rule
+        print self.match
 
     def _ensure_new_line(self):
         while self.text[-2:] != '\n\n':
