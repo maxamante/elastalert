@@ -311,7 +311,7 @@ class EmailAlerter(Alerter):
                 '</body>',
                 '</html>'
             ]
-            body = '\n'.join(new_body)
+            # body = '\n'.join(new_body)
 
         # Add JIRA ticket if it exists
         if self.pipeline is not None and 'jira_ticket' in self.pipeline:
@@ -319,7 +319,7 @@ class EmailAlerter(Alerter):
             body += '\nJIRA ticket: %s' % (url)
 
         to_addr = self.rule['email']
-        email_msg = MIMEText(body.encode('UTF-8'), _charset='UTF-8')
+        email_msg = MIMEText(body.encode('UTF-8'), _subtype='html', _charset='UTF-8')
         email_msg['Subject'] = self.create_title(matches)
         email_msg['To'] = ', '.join(self.rule['email'])
         email_msg['From'] = self.from_addr
