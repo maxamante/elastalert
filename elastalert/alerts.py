@@ -303,6 +303,15 @@ class EmailAlerter(Alerter):
         if 'blacklist' in self.rule:
             for patt in self.rule['blacklist']:
                 body = re.sub(patt, highlight, body)
+            new_body = [
+                'Content-Type: text/html; charset="us-ascii"',
+                '<html>',
+                '<body>',
+                body,
+                '</body>',
+                '</html>'
+            ]
+            body = '\n'.join(new_body)
 
         # Add JIRA ticket if it exists
         if self.pipeline is not None and 'jira_ticket' in self.pipeline:
