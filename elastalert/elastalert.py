@@ -137,20 +137,15 @@ class ElastAlerter():
         host = (es_conn_conf['es_host'] + ':' + str(es_conn_conf['es_port'])
                 if es_conn_conf['es_port']
                 else es_conn_conf['es_host'])
-
-        if es_conn_conf['es_url_prefix']:
-            host = ''.join([host, '/', es_conn_conf['es_url_prefix']])
+        print host
 
         es = Elasticsearch(host=host,
                            use_ssl=es_conn_conf['use_ssl'],
+                           url_prefix=es_conn_conf['es_url_prefix'],
                            connection_class=RequestsHttpConnection,
                            http_auth=es_conn_conf['http_auth'],
                            timeout=es_conn_conf['es_conn_timeout'],
                            send_get_body_as=es_conn_conf['send_get_body_as'])
-        print es
-        print vars(es)
-        print dir(es)
-        print es.__dict__
         return es
 
     @staticmethod
