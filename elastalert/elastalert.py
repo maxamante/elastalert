@@ -140,7 +140,7 @@ class ElastAlerter():
         print host
         print es_conn_conf
 
-        es = Elasticsearch(host=host,
+        es = Elasticsearch([host],
                            use_ssl=es_conn_conf['use_ssl'],
                            url_prefix=es_conn_conf['es_url_prefix'],
                            connection_class=RequestsHttpConnection,
