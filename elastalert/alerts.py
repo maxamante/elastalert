@@ -7,7 +7,7 @@ import re
 import subprocess
 import sys
 import warnings
-from email.mime.text import MIMEText
+from email.mime.text import MIMEText, MIMEMultipart
 from email.utils import formatdate
 from smtplib import SMTP
 from smtplib import SMTP_SSL
