@@ -141,12 +141,14 @@ class ElastAlerter():
         if es_conn_conf['es_url_prefix']:
             host = ''.join([host, '/', es_conn_conf['es_url_prefix']])
 
-        return Elasticsearch(host=host,
-                             use_ssl=es_conn_conf['use_ssl'],
-                             connection_class=RequestsHttpConnection,
-                             http_auth=es_conn_conf['http_auth'],
-                             timeout=es_conn_conf['es_conn_timeout'],
-                             send_get_body_as=es_conn_conf['send_get_body_as'])
+        es = Elasticsearch(host=host,
+                           use_ssl=es_conn_conf['use_ssl'],
+                           connection_class=RequestsHttpConnection,
+                           http_auth=es_conn_conf['http_auth'],
+                           timeout=es_conn_conf['es_conn_timeout'],
+                           send_get_body_as=es_conn_conf['send_get_body_as'])
+        print es
+        return es
 
     @staticmethod
     def build_es_conn_config(conf):
