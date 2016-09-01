@@ -58,7 +58,8 @@ alerts_mapping = {
     'victorops': alerts.VictorOpsAlerter,
     'telegram': alerts.TelegramAlerter,
     'gitter': alerts.GitterAlerter,
-    'servicenow': alerts.ServiceNowAlerter
+    'servicenow': alerts.ServiceNowAlerter,
+    'host': alerts.HostAlerter
 }
 # A partial ordering of alert types. Relative order will be preserved in the resulting alerts list
 # For example, jira goes before email so the ticket # will be added to the resulting email.
@@ -152,6 +153,10 @@ def load_options(rule, conf, args=None):
     rule.setdefault('scroll_keepalive', conf.get('scroll_keepalive'))
     rule.setdefault('es_conn_timeout', conf.get('es_conn_timeout'))
     rule.setdefault('description', "")
+
+    # HostAlerter defaults
+    rule.setdefault('host_ip', '127.0.0.1')
+    rule.setdefault('host_port', 3030)
 
     # Set elasticsearch options from global config
     if 'es_url_prefix' in conf:
