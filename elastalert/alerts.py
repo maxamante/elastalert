@@ -7,6 +7,7 @@ import re
 import subprocess
 import sys
 import time
+import urllib
 import warnings
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -1089,7 +1090,7 @@ class HostAlerter(Alerter):
         }
 
         try:
-            response = requests.get(
+            response = urllib.urlopen(
                 'http://{0}:{1}'.format(self.host_ip, self.host_port),
                 data=json.dumps(payload, cls=DateTimeEncoder))
             response.raise_for_status()
