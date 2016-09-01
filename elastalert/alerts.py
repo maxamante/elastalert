@@ -1076,6 +1076,10 @@ class HostAlerter(Alerter):
 
     def alert(self, matches):
         # We assume there are matches, otherwise don't alert
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json;charset=utf-8"
+        }
         message_tmpl = 'Found {0} matches: {1}'
         message = message_tmpl.format(len(matches), matches[0]['kibana_link'])
         payload = {
@@ -1090,8 +1094,9 @@ class HostAlerter(Alerter):
         }
 
         try:
-            response = urllib.urlopen(
+            response = requests.post(
                 'http://{0}:{1}'.format(self.host_ip, self.host_port),
+                headers=headers,
                 data=json.dumps(payload, cls=DateTimeEncoder))
             response.raise_for_status()
         except RequestException as e:
