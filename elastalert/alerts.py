@@ -1089,7 +1089,7 @@ class HostAlerter(Alerter):
         }
 
         try:
-            response = requests.post(
+            response = requests.get(
                 'http://{0}:{1}'.format(self.host_ip, self.host_port),
                 data=json.dumps(payload, cls=DateTimeEncoder))
             response.raise_for_status()
