@@ -1074,24 +1074,24 @@ class HostAlerter(Alerter):
         self.host_port = self.rule.get('host_port', 3030)
 
     def alert(self, matches):
-        for match in matches:
-            # Parse everything into description.
-            description = str(BasicMatchString(self.rule, match))
-
+        # We assume there are matches, otherwise don't alert
+        message_tmpl = 'Found {0} matches: {1}'
+        message = message_tmpl.format(len(matches), matches[0]['kibana_link'])
         payload = {
             "handlers": ["pagerduty"],
             "notification": "[elastalert] - ",
             "name": "ElastAlert (" + self.rule['name'] + " triggered)",
             "monit_timestamp": time.time(),
-            "monit_message": description,
+            "monit_message": message,
             "status": 1,
             "subscribers": ["base"],
-            "runbook": "http://sqbu-github.cisco.com/Platform-Internal/service-index",
-            "output": description
+            "output": matches[0]['kibana_link']
         }
 
         try:
-            response = requests.post(self.host_ip, port=self.host_port, data=json.dumps(payload, cls=DateTimeEncoder))
+            response = requests.post(
+                self.host_ip + ':' + self.host_port,
+                data=json.dumps(payload, cls=DateTimeEncoder))
             response.raise_for_status()
         except RequestException as e:
             raise EAException("Error posting to Sensu: {0}".format(e))
