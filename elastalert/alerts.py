@@ -1090,7 +1090,7 @@ class HostAlerter(Alerter):
 
         try:
             response = requests.post(
-                '{0}:{1}'.format(self.host_ip, self.host_port),
+                'http://{0}:{1}'.format(self.host_ip, self.host_port),
                 data=json.dumps(payload, cls=DateTimeEncoder))
             response.raise_for_status()
         except RequestException as e:
