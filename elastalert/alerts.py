@@ -6,6 +6,7 @@ import logging
 import re
 import subprocess
 import sys
+import time
 import warnings
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -1058,3 +1059,40 @@ class ServiceNowAlerter(Alerter):
     def get_info(self):
         return {'type': 'ServiceNow',
                 'self.servicenow_rest_url': self.servicenow_rest_url}
+
+
+class HostAlerter(Alerter):
+    """ Creates a host alert
+
+    Use to push alerts into the same alerting stream setup on the host
+    """
+    required_options = set(['host_ip', 'host_port'])
+
+    def __init__(self, rule):
+        super(HostAlerter, self).__init__(rule)
+        self.host_ip = self.rule.get('host_ip', '127.0.0.1')
+        self.host_port = self.rule.get('host_port', 3030)
+
+    def alert(self, matches):
+        for match in matches:
+            # Parse everything into description.
+            description = str(BasicMatchString(self.rule, match))
+
+        payload = {
+            "handlers": ["pagerduty"],
+            "notification": "[elastalert] - ",
+            "name": "ElastAlert (" + self.rule.name + " triggered)",
+            "monit_timestamp": time.time(),
+            "monit_message": description,
+            "status": 1,
+            "subscribers": ["base"],
+            "runbook": "http://sqbu-github.cisco.com/Platform-Internal/service-index",
+            "output": description
+        }
+
+        try:
+            response = requests.post(self.host_ip, port=self.host_port, data=json.dumps(payload, cls=DateTimeEncoder))
+            response.raise_for_status()
+        except RequestException as e:
+            raise EAException("Error posting to Sensu: {0}".format(e))
+        elastalert_logger.info("Alert sent to Host (Sensu)")
