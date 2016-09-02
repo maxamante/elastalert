@@ -29,8 +29,6 @@ from util import elastalert_logger
 from util import lookup_es_key
 from util import pretty_ts
 
-import requests_unixsocket
-
 
 class DateTimeEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -1096,17 +1094,12 @@ class HostAlerter(Alerter):
         }
 
         try:
-            session = requests_unixsocket.Session()
-
-            # Access /path/to/page from /tmp/profilesvc.sock
-            # r = session.get('http+unix://%2Ftmp%2Fprofilesvc.sock/path/to/page')
-
-            # response = requests.get(
-            response = session.post(
-                'http+unix://%2Ftmp%2Fprofilesvc.sock/{0}/{1}'.format(self.host_ip, self.host_port),
-                headers=headers,
-                data=json.dumps(payload, cls=DateTimeEncoder))
-            response.raise_for_status()
+            # response = requests.post(
+            #     '{0}:{1}'.format(self.host_ip, self.host_port),
+            #     headers=headers,
+            #     data=json.dumps(payload, cls=DateTimeEncoder))
+            # response.raise_for_status()
+            subprocess.check_call(['cat', payload, '|', 'nc', self.host_ip, self.host_port])
         except RequestException as e:
             raise EAException("Error posting to Sensu: {0}".format(e))
         elastalert_logger.info("Alert sent to Host (Sensu)")

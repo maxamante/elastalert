@@ -36,7 +36,6 @@ setup(
         'blist',
         'croniter',
         'configparser',
-        'aws-requests-auth',
-        'requests-unixsocket'
+        'aws-requests-auth'
     ]
 )
