@@ -1103,7 +1103,7 @@ class HostAlerter(Alerter):
 
             # response = requests.get(
             response = session.post(
-                'http+unix://%2Ftmp%2Fprofilesvc.sock/{0}:{1}'.format(self.host_ip, self.host_port),
+                'http+unix://%2Ftmp%2Fprofilesvc.sock/{0}/{1}'.format(self.host_ip, self.host_port),
                 headers=headers,
                 data=json.dumps(payload, cls=DateTimeEncoder))
             response.raise_for_status()
