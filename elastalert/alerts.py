@@ -29,6 +29,8 @@ from util import elastalert_logger
 from util import lookup_es_key
 from util import pretty_ts
 
+import requests_unixsocket
+
 
 class DateTimeEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -1094,11 +1096,12 @@ class HostAlerter(Alerter):
         }
 
         try:
-            response = requests.post(
-                'http://{0}:{1}'.format(self.host_ip, self.host_port),
-                headers=headers,
-                data=json.dumps(payload, cls=DateTimeEncoder))
-            response.raise_for_status()
+            with requests_unixsocket.monkeypatch():
+                response = requests.post(
+                    'http://{0}:{1}'.format(self.host_ip, self.host_port),
+                    headers=headers,
+                    data=json.dumps(payload, cls=DateTimeEncoder))
+                response.raise_for_status()
         except RequestException as e:
             raise EAException("Error posting to Sensu: {0}".format(e))
         elastalert_logger.info("Alert sent to Host (Sensu)")
