@@ -1096,12 +1096,17 @@ class HostAlerter(Alerter):
         }
 
         try:
-            with requests_unixsocket.monkeypatch():
-                response = requests.post(
-                    'http://{0}:{1}'.format(self.host_ip, self.host_port),
-                    headers=headers,
-                    data=json.dumps(payload, cls=DateTimeEncoder))
-                response.raise_for_status()
+            session = requests_unixsocket.Session()
+
+            # Access /path/to/page from /tmp/profilesvc.sock
+            # r = session.get('http+unix://%2Ftmp%2Fprofilesvc.sock/path/to/page')
+
+            # response = requests.get(
+            response = session.post(
+                'http+unix://%2Ftmp%2Fprofilesvc.sock/{0}:{1}'.format(self.host_ip, self.host_port),
+                headers=headers,
+                data=json.dumps(payload, cls=DateTimeEncoder))
+            response.raise_for_status()
         except RequestException as e:
             raise EAException("Error posting to Sensu: {0}".format(e))
         elastalert_logger.info("Alert sent to Host (Sensu)")
