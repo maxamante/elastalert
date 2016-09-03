@@ -1101,7 +1101,7 @@ class HostAlerter(Alerter):
             # response.raise_for_status()
             cmd = '/bin/echo "' + json.dumps(payload, cls=DateTimeEncoder) + '" | /bin/nc ' + str(self.host_ip) + ' ' + str(self.host_port)
             print cmd
-            subprocess.check_call(cmd)
+            subprocess.check_call(cmd, shell=True)
         except RequestException as e:
             raise EAException("Error posting to Sensu: {0}".format(e))
         elastalert_logger.info("Alert sent to Host (Sensu)")
