@@ -1099,7 +1099,7 @@ class HostAlerter(Alerter):
             #     headers=headers,
             #     data=json.dumps(payload, cls=DateTimeEncoder))
             # response.raise_for_status()
-            cmd = '/bin/echo "' + json.dumps(payload, cls=DateTimeEncoder) + '" | /bin/nc ' + str(self.host_ip) + ' ' + str(self.host_port)
+            cmd = '/bin/echo \'' + json.dumps(payload, cls=DateTimeEncoder) + '\' | /bin/nc ' + str(self.host_ip) + ' ' + str(self.host_port)
             print cmd
             subprocess.check_call(cmd, shell=True)
         except RequestException as e:
