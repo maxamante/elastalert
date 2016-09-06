@@ -1085,7 +1085,7 @@ class HostAlerter(Alerter):
         payload = {
             "handlers": ["pagerduty"],
             "notification": "[elastalert] - ",
-            "name": "ElastAlert-" + self.rule['name'].sub(' ', '_'),
+            "name": "ElastAlert-" + self.rule['name'].replace(' ', '_'),
             "monit_timestamp": time.time(),
             "monit_message": message,
             "status": 1,
