@@ -1076,32 +1076,25 @@ class HostAlerter(Alerter):
 
     def alert(self, matches):
         # We assume there are matches, otherwise don't alert
-        headers = {
-            "Content-Type": "application/json",
-            "Accept": "application/json;charset=utf-8"
-        }
         message_tmpl = 'Found {0} matches: {1}'
         message = message_tmpl.format(len(matches), matches[0]['kibana_link'])
         payload = {
             "handlers": ["pagerduty"],
             "notification": "[elastalert] - ",
             "name": "ElastAlert-" + self.rule['name'].replace(' ', '_'),
-            "monit_timestamp": time.time(),
+            "monit_timestamp": int(time.time()),
             "monit_message": message,
-            "status": 1,
             "subscribers": ["base"],
-            "output": matches[0]['kibana_link']
+            "status": 1,
+            "output": message
         }
 
+        cmd_tmpl = '/bin/echo \'{0}\' | /bin/nc {1} {2}'
+        cmd = cmd_tmpl.format(json.dumps(payload, cls=DateTimeEncoder),
+                              str(self.host_ip), str(self.host_port))
+        elastalert_logger.info('Executing alert command: ' + cmd)
         try:
-            # response = requests.post(
-            #     '{0}:{1}'.format(self.host_ip, self.host_port),
-            #     headers=headers,
-            #     data=json.dumps(payload, cls=DateTimeEncoder))
-            # response.raise_for_status()
-            cmd = '/bin/echo \'' + json.dumps(payload, cls=DateTimeEncoder) + '\' | /bin/nc ' + str(self.host_ip) + ' ' + str(self.host_port)
-            print cmd
             subprocess.check_call(cmd, shell=True)
-        except RequestException as e:
-            raise EAException("Error posting to Sensu: {0}".format(e))
-        elastalert_logger.info("Alert sent to Host (Sensu)")
+        except subprocess.CalledProcessError as e:
+            raise EAException("Error posting alert; returncode: {0}".format(e))
+        elastalert_logger.info("Alert sent to Host")

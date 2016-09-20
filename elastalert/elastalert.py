@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import signal
+import subprocess
 import sys
 import time
 import traceback
@@ -236,7 +237,7 @@ class ElastAlerter():
         aggs_query = {'aggs': query}
         return aggs_query
 
-    def get_index_start(self, index, timestamp_field='@timestamp'):
+    def get_index_start(self, index, timestamp_field='@timestamp', write_to_metrics=False):
         """ Query for one result sorted by timestamp to find the beginning of the index.
 
         :param index: The index of which to find the earliest event.
@@ -246,7 +247,10 @@ class ElastAlerter():
         try:
             res = self.current_es.search(index=index, size=1, body=query, _source_include=[timestamp_field], ignore_unavailable=True)
         except ElasticsearchException as e:
-            self.handle_error("Elasticsearch query error: %s" % (e), {'index': index})
+            self.handle_error(
+                "Elasticsearch query error: %s" % (e),
+                {'index': index},
+                write_to_metrics)
             return '1969-12-30T00:00:00Z'
         if len(res['hits']['hits']) == 0:
             # Index is completely empty, return a date before the epoch
@@ -317,7 +321,10 @@ class ElastAlerter():
             # (so big that they will fill the entire terminal buffer)
             if len(str(e)) > 1024:
                 e = str(e)[:1024] + '... (%d characters removed)' % (len(str(e)) - 1024)
-            self.handle_error('Error running query: %s' % (e), {'rule': rule['name']})
+            self.handle_error(
+                'Error running query: %s' % (e),
+                {'rule': rule['name']},
+                rule.get('write_to_metrics', False))
             return None
 
         hits = res['hits']['hits']
@@ -356,7 +363,10 @@ class ElastAlerter():
             # (so big that they will fill the entire terminal buffer)
             if len(str(e)) > 1024:
                 e = str(e)[:1024] + '... (%d characters removed)' % (len(str(e)) - 1024)
-            self.handle_error('Error running count query: %s' % (e), {'rule': rule['name']})
+            self.handle_error(
+                'Error running count query: %s' % (e),
+                {'rule': rule['name']},
+                rule.get('write_to_metrics', False))
             return None
 
         self.num_hits += res['count']
@@ -383,7 +393,10 @@ class ElastAlerter():
             # (so big that they will fill the entire terminal buffer)
             if len(str(e)) > 1024:
                 e = str(e)[:1024] + '... (%d characters removed)' % (len(str(e)) - 1024)
-            self.handle_error('Error running query: %s' % (e), {'rule': rule['name']})
+            self.handle_error(
+                'Error running query: %s' % (e),
+                {'rule': rule['name']},
+                rule.get('write_to_metrics', False))
             return None
 
         if 'aggregations' not in res:
@@ -425,7 +438,7 @@ class ElastAlerter():
         Returns True on success and False on failure.
         """
         if start is None:
-            start = self.get_index_start(rule['index'])
+            start = self.get_index_start(rule['index'], write_to_metrics=rule.get('write_to_metrics', False))
         if end is None:
             end = ts_now()
 
@@ -485,7 +498,10 @@ class ElastAlerter():
                         elastalert_logger.info("Found expired previous run for %s at %s" % (rule['name'], endtime))
                         return None
         except (ElasticsearchException, KeyError) as e:
-            self.handle_error('Error querying for last run: %s' % (e), {'rule': rule['name']})
+            self.handle_error(
+                'Error querying for last run: %s' % (e),
+                {'rule': rule['name']},
+                rule.get('write_to_metrics', False))
             self.writeback_es = None
 
     def set_starttime(self, rule, endtime):
@@ -594,7 +610,8 @@ class ElastAlerter():
 
             if rule['realert']:
                 next_alert, exponent = self.next_alert_time(rule, rule['name'] + key, ts_now())
-                self.set_realert(rule['name'] + key, next_alert, exponent)
+                write_to_metrics = rule.get('write_to_metrics', False)
+                self.set_realert(rule['name'] + key, next_alert, exponent, write_to_metrics)
 
             if rule.get('run_enhancements_first'):
                 try:
@@ -602,7 +619,10 @@ class ElastAlerter():
                         try:
                             enhancement.process(match)
                         except EAException as e:
-                            self.handle_error("Error running match enhancement: %s" % (e), {'rule': rule['name']})
+                            self.handle_error(
+                                "Error running match enhancement: %s" % (e),
+                                {'rule': rule['name']},
+                                rule.get('write_to_metrics', False))
                 except DropMatchException:
                     continue
 
@@ -625,7 +645,8 @@ class ElastAlerter():
                 'matches': num_matches,
                 'hits': self.num_hits,
                 '@timestamp': ts_now(),
-                'time_taken': time_taken}
+                'time_taken': time_taken,
+                'write_to_metrics': rule.get('write_to_metrics', False)}
         self.writeback('elastalert_status', body)
 
         return num_matches
@@ -720,7 +741,7 @@ class ElastAlerter():
                     if new_rule['name'] in [rule['name'] for rule in self.rules]:
                         raise EAException("A rule with the name %s already exists" % (new_rule['name']))
                 except EAException as e:
-                    self.handle_error('Could not load rule %s: %s' % (rule_file, e))
+                    self.handle_error('Could not load rule %s: %s' % (rule_file, e), write_to_metrics=new_rule.get('write_to_metrics', False))
                     self.send_notification_email(exception=e, rule_file=rule_file)
                     continue
                 elastalert_logger.info('Loaded new rule %s' % (rule_file))
@@ -783,7 +804,10 @@ class ElastAlerter():
             try:
                 num_matches = self.run_rule(rule, endtime, self.starttime)
             except EAException as e:
-                self.handle_error("Error running rule %s: %s" % (rule['name'], e), {'rule': rule['name']})
+                self.handle_error(
+                    "Error running rule %s: %s" % (rule['name'], e),
+                    {'rule': rule['name']},
+                    rule.get('write_to_metrics', False))
             except Exception as e:
                 self.handle_uncaught_exception(e, rule)
             else:
@@ -965,7 +989,9 @@ class ElastAlerter():
                 else:
                     kb_link = self.use_kibana_link(rule, matches[0])
             except EAException as e:
-                self.handle_error("Could not generate kibana dash for %s match: %s" % (rule['name'], e))
+                self.handle_error(
+                    "Could not generate kibana dash for %s match: %s" % (rule['name'], e),
+                    write_to_metrics=rule.get('write_to_metrics', False))
             else:
                 if kb_link:
                     matches[0]['kibana_link'] = kb_link
@@ -985,7 +1011,10 @@ class ElastAlerter():
                     except DropMatchException as e:
                         pass
                     except EAException as e:
-                        self.handle_error("Error running match enhancement: %s" % (e), {'rule': rule['name']})
+                        self.handle_error(
+                            "Error running match enhancement: %s" % (e),
+                            {'rule': rule['name']},
+                            rule.get('write_to_metrics', False))
                 matches = valid_matches
                 if not matches:
                     return None
@@ -1007,7 +1036,10 @@ class ElastAlerter():
             try:
                 alert.alert(matches)
             except EAException as e:
-                self.handle_error('Error while running alert %s: %s' % (alert.get_info()['type'], e), {'rule': rule['name']})
+                self.handle_error(
+                    'Error while running alert %s: %s' % (alert.get_info()['type'], e),
+                    {'rule': rule['name']},
+                    rule.get('write_to_metrics', False))
                 alert_exception = str(e)
             else:
                 self.alerts_sent += 1
@@ -1020,6 +1052,7 @@ class ElastAlerter():
             # Set all matches to aggregate together
             if agg_id:
                 alert_body['aggregate_id'] = agg_id
+            alert_body['write_to_metrics'] = rule.get('write_to_metrics', False)
             res = self.writeback('elastalert', alert_body)
             if res and not agg_id:
                 agg_id = res['_id']
@@ -1048,6 +1081,7 @@ class ElastAlerter():
 
         if '@timestamp' not in body:
             body['@timestamp'] = dt_to_ts(ts_now())
+
         if self.writeback_es:
             try:
                 res = self.writeback_es.create(index=self.writeback_index,
@@ -1056,6 +1090,24 @@ class ElastAlerter():
             except ElasticsearchException as e:
                 logging.exception("Error writing alert info to elasticsearch: %s" % (e))
                 self.writeback_es = None
+
+        if body['write_to_metrics']:
+            metric_tmpl = (
+                'elastalertRuleTriggered,rule_name={rule_name} '
+                'hits={hits},matches={matches},time_taken={time_taken},'
+                'starttime={starttime},endtime={endtime} {@timestamp}'
+            )
+            cmd_tmpl = '/bin/echo \'{0}\' | /bin/nc {1} {2}'
+            metric = metric_tmpl.format(**body)
+            cmd = cmd_tmpl.format(metric,
+                                  str(self.host_ip), str(self.host_port))
+            elastalert_logger.info('Executing metrics command: ' + cmd)
+            try:
+                subprocess.check_call(cmd, shell=True)
+            except subprocess.CalledProcessError as e:
+                raise EAException("Error posting metrics; returncode: {0}".format(e))
+            elastalert_logger.info("Metrics sent to Host")
+
 
     def find_recent_pending_alerts(self, time_limit):
         """ Queries writeback_es to find alerts that did not send
@@ -1124,7 +1176,9 @@ class ElastAlerter():
                                              doc_type='elastalert',
                                              id=_id)
                 except:  # TODO: Give this a more relevant exception, try:except: is evil.
-                    self.handle_error("Failed to delete alert %s at %s" % (_id, alert_time))
+                    self.handle_error(
+                        "Failed to delete alert %s at %s" % (_id, alert_time),
+                        write_to_metrics=rule.get('write_to_metrics', False))
 
         # Send in memory aggregated alerts
         for rule in self.rules:
@@ -1170,7 +1224,10 @@ class ElastAlerter():
             if len(res['hits']['hits']) == 0:
                 return None
         except (KeyError, ElasticsearchException) as e:
-            self.handle_error("Error searching for pending aggregated matches: %s" % (e), {'rule_name': rule['name']})
+            self.handle_error(
+                "Error searching for pending aggregated matches: %s" % (e),
+                {'rule_name': rule['name']},
+                rule.get('write_to_metrics', False))
             return None
 
         return res['hits']['hits'][0]
@@ -1196,7 +1253,10 @@ class ElastAlerter():
                         iter = croniter(rule['aggregation']['schedule'], ts_now())
                         alert_time = unix_to_dt(iter.get_next())
                     except Exception as e:
-                        self.handle_error("Error parsing aggregate send time Cron format %s" % (e), rule['aggregation']['schedule'])
+                        self.handle_error(
+                            "Error parsing aggregate send time Cron format %s" % (e),
+                            rule['aggregation']['schedule'],
+                            rule.get('write_to_metrics', False))
                 else:
                     alert_time = match_time + rule['aggregation']
 
@@ -1212,6 +1272,8 @@ class ElastAlerter():
         alert_body = self.get_alert_body(match, rule, False, alert_time)
         if agg_id:
             alert_body['aggregate_id'] = agg_id
+
+        alert_body['write_to_metrics'] = rule.get('write_to_metrics', False)
         res = self.writeback('elastalert', alert_body)
 
         # If new aggregation, save _id
@@ -1246,17 +1308,19 @@ class ElastAlerter():
             logging.error('%s is not a valid time period' % (self.args.silence))
             exit(1)
 
-        if not self.set_realert(rule_name, silence_ts, 0):
+        write_to_metrics = rule.get('write_to_metrics', False)
+        if not self.set_realert(rule_name, silence_ts, 0, write_to_metrics):
             logging.error('Failed to save silence command to elasticsearch')
             exit(1)
 
         elastalert_logger.info('Success. %s will be silenced until %s' % (rule_name, silence_ts))
 
-    def set_realert(self, rule_name, timestamp, exponent):
+    def set_realert(self, rule_name, timestamp, exponent, write_to_metrics=False):
         """ Write a silence to elasticsearch for rule_name until timestamp. """
         body = {'exponent': exponent,
                 'rule_name': rule_name,
                 '@timestamp': ts_now(),
+                'write_to_metrics': write_to_metrics,
                 'until': timestamp}
 
         self.silence_cache[rule_name] = (timestamp, exponent)
@@ -1281,7 +1345,8 @@ class ElastAlerter():
                 res = self.writeback_es.search(index=self.writeback_index, doc_type='silence',
                                                size=1, body=query, _source_include=['until', 'exponent'])
             except ElasticsearchException as e:
-                self.handle_error("Error while querying for alert silence status: %s" % (e), {'rule': rule_name})
+                self.handle_error(
+                    "Error while querying for alert silence status: %s" % (e), {'rule': rule_name})
 
                 return False
 
@@ -1294,7 +1359,7 @@ class ElastAlerter():
                     return True
         return False
 
-    def handle_error(self, message, data=None):
+    def handle_error(self, message, data=None, write_to_metrics=None):
         ''' Logs message at error level and writes message, data and traceback to Elasticsearch. '''
         if not self.writeback_es:
             self.writeback_es = self.new_elasticsearch(self.es_conn_config)
@@ -1305,12 +1370,16 @@ class ElastAlerter():
         body['traceback'] = tb.strip().split('\n')
         if data:
             body['data'] = data
+        body['write_to_metrics'] = write_to_metrics if write_to_metrics else False
         self.writeback('elastalert_error', body)
 
     def handle_uncaught_exception(self, exception, rule):
         """ Disables a rule and sends a notification. """
         logging.error(traceback.format_exc())
-        self.handle_error('Uncaught exception running rule %s: %s' % (rule['name'], exception), {'rule': rule['name']})
+        self.handle_error(
+            'Uncaught exception running rule %s: %s' % (rule['name'], exception),
+            {'rule': rule['name']},
+            rule.get('write_to_metrics', False))
         if self.disable_rules_on_error:
             self.rules = [running_rule for running_rule in self.rules if running_rule['name'] != rule['name']]
             self.disabled_rules.append(rule)
@@ -1321,8 +1390,10 @@ class ElastAlerter():
     def send_notification_email(self, text='', exception=None, rule=None, subject=None, rule_file=None):
         email_body = text
         rule_name = None
+        write_to_metrics = False
         if rule:
             rule_name = rule['name']
+            write_to_metrics = rule.get('write_to_metrics', False)
         elif rule_file:
             rule_name = rule_file
         if exception and rule_name:
@@ -1354,7 +1425,10 @@ class ElastAlerter():
             smtp = SMTP(self.smtp_host)
             smtp.sendmail(self.from_addr, recipients, email.as_string())
         except (SMTPException, error) as e:
-            self.handle_error('Error connecting to SMTP host: %s' % (e), {'email_body': email_body})
+            self.handle_error(
+                'Error connecting to SMTP host: %s' % (e),
+                {'email_body': email_body},
+                write_to_metrics)
 
     def get_top_counts(self, rule, starttime, endtime, keys, number=None, qk=None):
         """ Counts the number of events for each unique value for each key field.
