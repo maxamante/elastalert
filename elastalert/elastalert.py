@@ -1278,6 +1278,8 @@ class ElastAlerter():
             alert_body['aggregate_id'] = agg_id
 
         alert_body['write_to_metrics'] = rule.get('write_to_metrics', False)
+        elastalert_logger.info('Going to writeback')
+        elastalert_logger.info('rule["write_to_metrics"]: {0}'.format(alert_body['write_to_metrics']))
         res = self.writeback('elastalert', alert_body)
 
         # If new aggregation, save _id
