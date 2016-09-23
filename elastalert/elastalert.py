@@ -1096,11 +1096,12 @@ class ElastAlerter():
         if 'write_to_metrics' in body and body['write_to_metrics']:
             # convert @timestamp
 
+            body['rule_name'] = body['rule_name'].replace(" ", "-")
             body['@timestamp'] = dt_to_unix(datetime.datetime.strptime(body['@timestamp'], "%Y-%m-%dT%H:%M:%S.%fZ"))
             body['starttime'] = dt_to_unix(datetime.datetime.strptime(body['starttime'], "%Y-%m-%dT%H:%M:%S.%fZ"))
             body['endtime'] = dt_to_unix(datetime.datetime.strptime(body['endtime'], "%Y-%m-%dT%H:%M:%S.%fZ"))
             metric_tmpl = (
-                'elastalertRuleTriggered,rule_name="{rule_name}" '
+                'elastalertRuleTriggered,rule_name={rule_name} '
                 'hits={hits},matches={matches},time_taken={time_taken},'
                 'starttime={starttime},endtime={endtime} {@timestamp}'
             )
