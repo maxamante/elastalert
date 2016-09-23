@@ -1093,8 +1093,7 @@ class ElastAlerter():
                 self.writeback_es = None
 
         elastalert_logger.info('In writeback method')
-        elastalert_logger.info('body["write_to_metrics"]: {0}'.format(body['write_to_metrics']))
-        if body['write_to_metrics']:
+        if 'write_to_metrics' in body and body['write_to_metrics']:
             metric_tmpl = (
                 'elastalertRuleTriggered,rule_name={rule_name} '
                 'hits={hits},matches={matches},time_taken={time_taken},'
