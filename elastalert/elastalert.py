@@ -1088,7 +1088,6 @@ class ElastAlerter():
             try:
                 res = self.writeback_es.create(index=self.writeback_index,
                                                doc_type=doc_type, body=body)
-                return res
             except ElasticsearchException as e:
                 logging.exception("Error writing alert info to elasticsearch: %s" % (e))
                 self.writeback_es = None
@@ -1111,6 +1110,9 @@ class ElastAlerter():
             except subprocess.CalledProcessError as e:
                 raise EAException("Error posting metrics; returncode: {0}".format(e))
             elastalert_logger.info("Metrics sent to Host")
+
+        return res
+
 
 
     def find_recent_pending_alerts(self, time_limit):
