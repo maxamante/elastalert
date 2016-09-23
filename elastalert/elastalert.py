@@ -1054,7 +1054,7 @@ class ElastAlerter():
             # Set all matches to aggregate together
             if agg_id:
                 alert_body['aggregate_id'] = agg_id
-            alert_body['write_to_metrics'] = rule.get('write_to_metrics', False)
+            #alert_body['write_to_metrics'] = rule.get('write_to_metrics', False)
             res = self.writeback('elastalert', alert_body)
             if res and not agg_id:
                 agg_id = res['_id']
@@ -1101,6 +1101,7 @@ class ElastAlerter():
                 'starttime={starttime},endtime={endtime} {@timestamp}'
             )
             cmd_tmpl = '/bin/echo \'{0}\' | /bin/nc {1} {2}'
+
             metric = metric_tmpl.format(**body)
             cmd = cmd_tmpl.format(metric,
                                   str(self.writeback_host_ip), str(self.writeback_host_port))
@@ -1279,9 +1280,7 @@ class ElastAlerter():
         if agg_id:
             alert_body['aggregate_id'] = agg_id
 
-        alert_body['write_to_metrics'] = rule.get('write_to_metrics', False)
-        elastalert_logger.info('Going to writeback')
-        elastalert_logger.info('rule["write_to_metrics"]: {0}'.format(alert_body['write_to_metrics']))
+        #alert_body['write_to_metrics'] = rule.get('write_to_metrics', False)
         res = self.writeback('elastalert', alert_body)
 
         # If new aggregation, save _id
@@ -1328,7 +1327,7 @@ class ElastAlerter():
         body = {'exponent': exponent,
                 'rule_name': rule_name,
                 '@timestamp': ts_now(),
-                'write_to_metrics': write_to_metrics,
+                #'write_to_metrics': write_to_metrics,
                 'until': timestamp}
 
         self.silence_cache[rule_name] = (timestamp, exponent)
@@ -1378,7 +1377,7 @@ class ElastAlerter():
         body['traceback'] = tb.strip().split('\n')
         if data:
             body['data'] = data
-        body['write_to_metrics'] = write_to_metrics if write_to_metrics else False
+        #body['write_to_metrics'] = write_to_metrics if write_to_metrics else False
         self.writeback('elastalert_error', body)
 
     def handle_uncaught_exception(self, exception, rule):
