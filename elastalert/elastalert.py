@@ -1092,7 +1092,6 @@ class ElastAlerter():
                 logging.exception("Error writing alert info to elasticsearch: %s" % (e))
                 self.writeback_es = None
 
-        elastalert_logger.info('In writeback method')
         if 'write_to_metrics' in body and body['write_to_metrics']:
             # convert @timestamp
             body['@timestamp'] = dt_to_ts(body['@timestamp'])
