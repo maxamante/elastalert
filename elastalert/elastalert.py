@@ -1097,7 +1097,7 @@ class ElastAlerter():
             # convert @timestamp
 
             body['rule_name'] = body['rule_name'].replace(" ", "-")
-            body['@timestamp'] = dt_to_unix(datetime.datetime.strptime(body['@timestamp'], "%Y-%m-%dT%H:%M:%S.%fZ")) * 1000000
+            body['@timestamp'] = dt_to_unix(datetime.datetime.strptime(body['@timestamp'], "%Y-%m-%dT%H:%M:%S.%fZ")) * 1000000000
             body['starttime'] = dt_to_unix(datetime.datetime.strptime(body['starttime'], "%Y-%m-%dT%H:%M:%S.%fZ"))
             body['endtime'] = dt_to_unix(datetime.datetime.strptime(body['endtime'], "%Y-%m-%dT%H:%M:%S.%fZ"))
             metric_tmpl = (
