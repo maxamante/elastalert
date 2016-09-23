@@ -1094,8 +1094,12 @@ class ElastAlerter():
 
         elastalert_logger.info('In writeback method')
         if 'write_to_metrics' in body and body['write_to_metrics']:
+            # convert @timestamp
+            body['@timestamp'] = (body['@timestamp'] - datetime.datetime(1970, 1, 1)).total_seconds()
+            body['starttime'] = (body['starttime'] - datetime.datetime(1970, 1, 1)).total_seconds()
+            body['endtime'] = (body['endtime'] - datetime.datetime(1970, 1, 1)).total_seconds()
             metric_tmpl = (
-                'elastalertRuleTriggered,rule_name={rule_name} '
+                'elastalertRuleTriggered,rule_name="{rule_name}"'
                 'hits={hits},matches={matches},time_taken={time_taken},'
                 'starttime={starttime},endtime={endtime} {@timestamp}'
             )
