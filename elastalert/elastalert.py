@@ -1093,6 +1093,8 @@ class ElastAlerter():
                 logging.exception("Error writing alert info to elasticsearch: %s" % (e))
                 self.writeback_es = None
 
+        elastalert_logger.info('In writeback method')
+        elastalert_logger.info('body["write_to_metrics"]: {0}'.format(body['write_to_metrics']))
         if body['write_to_metrics']:
             metric_tmpl = (
                 'elastalertRuleTriggered,rule_name={rule_name} '
