@@ -118,6 +118,8 @@ class ElastAlerter():
         self.es_conn_config = self.build_es_conn_config(self.conf)
 
         self.writeback_es = self.new_elasticsearch(self.es_conn_config)
+        self.writeback_host_ip = self.conf.get('writeback_host_ip', 'localhost')
+        self.writeback_host_port = self.conf.get('writeback_host_port', 8086)
 
         for rule in self.rules:
             self.init_rule(rule)
@@ -1100,7 +1102,7 @@ class ElastAlerter():
             cmd_tmpl = '/bin/echo \'{0}\' | /bin/nc {1} {2}'
             metric = metric_tmpl.format(**body)
             cmd = cmd_tmpl.format(metric,
-                                  str(self.host_ip), str(self.host_port))
+                                  str(self.writeback_host_ip), str(self.writeback_host_port))
             elastalert_logger.info('Executing metrics command: ' + cmd)
             try:
                 subprocess.check_call(cmd, shell=True)
