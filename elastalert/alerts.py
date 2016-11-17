@@ -1084,8 +1084,8 @@ class HostAlerter(Alerter):
             "name": "ElastAlert-" + self.rule['name'].replace(' ', '_'),
             "monit_timestamp": int(time.time()),
             "monit_message": message,
-            "subscribers": ["base"],
-            "status": 1,
+            "subscribers": self.rule.get('subscribers', ["base"]),
+            "status": self.rule.get('alert_status', 1),
             "output": message
         }
 
